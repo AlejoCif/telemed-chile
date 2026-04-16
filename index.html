@@ -317,7 +317,7 @@
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             </button>
             <div class="overflow-hidden mx-10">
-              <div id="track-clientes" class="flex justify-center gap-4 transition-transform duration-300 ease-in-out">
+              <div id="track-clientes" class="flex gap-4 transition-transform duration-300 ease-in-out">
                 <a href="https://www.consalud.cl" target="_blank" rel="noopener noreferrer" class="carousel-item-cl flex-shrink-0 rounded-xl border bg-white p-3 flex items-center justify-center hover:shadow-md transition">
                   <img src="https://telemed-chile.cl/img/Consalud.png" alt="Consalud" class="w-full h-24 object-contain" />
                 </a>
@@ -382,23 +382,31 @@
         function initCarousel(id, selector) {
           const track = document.getElementById('track-' + id);
           const items = track.querySelectorAll(selector);
+          const gap = 16;
           const visible = window.innerWidth >= 1024 ? 4 : window.innerWidth >= 640 ? 2 : 1;
+          const containerWidth = track.parentElement.offsetWidth;
+          const itemWidth = Math.floor((containerWidth - gap * (visible - 1)) / visible);
           items.forEach(item => {
-            const gap = 16;
-            const containerWidth = track.parentElement.offsetWidth;
-            item.style.width = `calc(${100 / visible}% - ${gap * (visible - 1) / visible}px)`;
+            item.style.width = itemWidth + 'px';
+            item.style.flexShrink = '0';
           });
-          carouselState[id] = { index: 0, total: items.length, visible };
+          // centrar si hay menos items que slots visibles
+          track.style.justifyContent = items.length <= visible ? 'center' : 'flex-start';
+          carouselState[id] = { index: 0, total: items.length, visible, itemWidth };
         }
 
         function moveCarousel(id, dir) {
           const state = carouselState[id];
           if (!state) return;
           const track = document.getElementById('track-' + id);
-          const maxIndex = state.total - state.visible;
+          const maxIndex = Math.max(0, state.total - state.visible);
           state.index = Math.max(0, Math.min(state.index + dir, maxIndex));
-          const itemWidth = track.children[0].offsetWidth + 16;
-          track.style.transform = `translateX(-${state.index * itemWidth}px)`;
+          track.style.transform = `translateX(-${state.index * (state.itemWidth + 16)}px)`;
+        }
+
+        function resetCarousel(id) {
+          const track = document.getElementById('track-' + id);
+          if (track) track.style.transform = 'translateX(0)';
         }
 
         window.addEventListener('load', () => {
@@ -406,10 +414,9 @@
           initCarousel('asociados-cl', '.carousel-item-as-cl');
         });
         window.addEventListener('resize', () => {
+          resetCarousel('clientes'); resetCarousel('asociados-cl');
           initCarousel('clientes', '.carousel-item-cl');
           initCarousel('asociados-cl', '.carousel-item-as-cl');
-          document.getElementById('track-clientes').style.transform = 'translateX(0)';
-          document.getElementById('track-asociados-cl').style.transform = 'translateX(0)';
         });
       </script>
 
